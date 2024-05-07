@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import sys
 from utils.utils import load_config
 
@@ -17,12 +18,17 @@ def compile_ff_data(price_data, root_dir):
         df = df.sort_values('Date')
         df.set_index('Date', inplace=True)
         df.index = pd.to_datetime(df.index)
-        df = df.resample('Q').last() # resample to quarters so datasets all match
+        df = df.resample('QE').last() # resample to quarters so datasets all match
 
         data_items_needed = ['dividendPayout', 'commonStockSharesOutstanding', 'netIncome_x', 'operatingCashflow', 'totalRevenue', 'costOfRevenue', 'totalAssets']
 
         subset_df = df[data_items_needed]
-        subset_df = pd.merge(subset_df, price_data[[tic]], on='Date')
+        subset_df = subset_df.ffill().bfill() # fill in missing quarterly data
+        subset_df = subset_df.resample('ME').ffill() # resample to monthly before joining with price data
+        price_data_m = price_data.resample('ME').last() # resample price_data to monthly
+
+
+        subset_df = pd.merge(subset_df, price_data_m[[tic]], on='Date')
         subset_df = subset_df.rename(columns={tic: 'Price'})
 
         # calculate factors
@@ -32,6 +38,10 @@ def compile_ff_data(price_data, root_dir):
         subset_df['ROA'] = subset_df.netIncome_x / subset_df.totalAssets
         subset_df['netProfitMargin'] = subset_df.netIncome_x / subset_df.totalRevenue
         subset_df['ticker'] = tic
+
+        # replace any divide by 0 errors
+        subset_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        subset_df.ffill(inplace=True)
 
         subset_df.drop(['Price'] + data_items_needed, axis=1, inplace=True)
 
@@ -46,27 +56,18 @@ def main():
     price_data.index = pd.to_datetime(price_data.index)
 
     root_dir = '../data/statement_data/'
-    # start_date = '2010-06-30' # might be nice to get into a config file
     config = load_config()
-    start_date = config.get('MetaData', 'start_date')
+    start_date = config.get('MetaData', 'final_start_date')
 
     compiled_df = compile_ff_data(price_data, root_dir)
 
     fundamental_df = compiled_df.rename(columns={'ticker': 'Ticker'})
+    fundamental_df.set_index(['Ticker'], append=True, inplace=True) # create multi-index with Date
+    fundamental_df = fundamental_df.loc[start_date:] # set start date
 
-    # Set start date and handle missing values
-    fundamental_df.set_index(['Ticker'], append=True, inplace=True)
-    fundamental_df = fundamental_df.loc[start_date:]
-    fundamental_df = fundamental_df.ffill().bfill()
+    fundamental_df.to_csv('../data/monthly_fund_data.csv')
 
-    # Resample quarterly data to monthly
-    monthly_ff = fundamental_df.reset_index(level=['Ticker'])
-    monthly_ff = monthly_ff.groupby(['Ticker']).resample('M').ffill()
-    monthly_ff.drop('Ticker', axis=1, inplace=True)
-
-
-    monthly_ff.to_csv('../data/monthly_fund_data.csv')
-
+    print('\n\nFundamental data compilation is complete!\n')
 
 
 if __name__=="__main__":

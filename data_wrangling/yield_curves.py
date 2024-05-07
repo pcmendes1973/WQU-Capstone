@@ -47,13 +47,13 @@ def get_yields(start_year, end_year):
     return yields[sorted(yields.columns, key=lambda x:(int(x[:-3])/12 if x[-2:] == 'Mo' else int(x[:-3])))]
 
 def main():
-    """Gets yield curves from 2000 to 2023 from treasury.gov, saves the data
+    """Gets yield curves from 2010 to 2023 from treasury.gov, saves the data
     into file 'Yield curves.csv', interpolates the curve using splines,
     and saves the resulting dataframe into file 'interpolated_yield_curves.csv'."""
     print('Getting yields...')
 
     config = load_config()
-    start_date = config.get('MetaData', 'start_date')
+    start_date = config.get('MetaData', 'raw_start_date')
     end_date = config.get('MetaData', 'end_date')
 
     start_year = int(start_date[:4])
@@ -63,6 +63,7 @@ def main():
     yield_curves.to_csv('../data/yield_curves.csv')
     
     print('Interpolating yields...')
+    # sample every 0.1 years
     x_values = np.linspace(0, 30, 301)
     
     interpolated_yield_curves = pd.DataFrame(

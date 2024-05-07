@@ -16,3 +16,9 @@ def load_config():
     config.read(config_path)
 
     return config
+
+
+def set_seeds(seed_state):
+    np.random.seed(seed_state)
+    random.seed(seed_state)
+    tf.random.set_seed(seed_state)

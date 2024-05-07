@@ -37,7 +37,7 @@ def main():
     tickers = get_tickers('../data/tickers.csv')
     
     config = load_config()
-    start_date = config.get('MetaData', 'start_date')
+    start_date = config.get('MetaData', 'raw_start_date')
     end_date = config.get('MetaData', 'end_date')
 
     try:
