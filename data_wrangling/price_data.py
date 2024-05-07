@@ -19,23 +19,20 @@ from utils.utils import load_config
 import os
 import sys
 
-
-def get_tickers(direc):
-    if os.path.exists(direc):
-
-        return pd.read_csv(direc)['Ticker'].tolist()
-    
-    else:
-        
-        sp_da = pd.read_html('https://en.wikipedia.org/wiki/S%26P_500_Dividend_Aristocrats')[0]
-        tickers = sp_da['Ticker symbol'].tolist()
-
-        return tickers
+# SP 500 dividend aristocrats as of April 2024
+tickers = ['ABBV', 'BDX', 'CL', 'FAST', 'KO', 'NUE', 'SWK',
+           'ABT', 'BEN', 'CLX', 'FRT', 'KVUE', 'O', 'SYY',
+           'ADM', 'BF-B', 'CTAS', 'GD', 'LIN', 'PEP', 'TGT',
+           'ADP', 'BRO', 'CVX', 'GPC', 'LOW', 'PG', 'TROW',
+           'AFL', 'CAH', 'DOV', 'GWW', 'MCD', 'PNR', 'WMT',
+           'ALB', 'CAT', 'ECL', 'HRL', 'MDT', 'PPG', 'WST',
+           'AMCR', 'CB', 'ED', 'IBM', 'MKC', 'ROP', 'XOM',
+           'AOS', 'CHD', 'EMR', 'ITW', 'MMM', 'SHW',
+           'APD', 'CHRW', 'ESS', 'JNJ', 'NDSN', 'SJM',
+           'ATO', 'CINF', 'EXPD', 'KMB', 'NEE', 'SPGI']
 
 def main():
 
-    tickers = get_tickers('../data/tickers.csv')
-    
     config = load_config()
     start_date = config.get('MetaData', 'raw_start_date')
     end_date = config.get('MetaData', 'end_date')
